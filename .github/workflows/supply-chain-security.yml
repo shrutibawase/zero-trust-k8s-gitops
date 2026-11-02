@@ -1,0 +1,92 @@
+name: "SLSA Level 3 Supply Chain Security & Container Signing"
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write # Required for Sigstore Cosign keyless OIDC signing
+  security-events: write
+
+jobs:
+  sast-and-secrets:
+    name: "Shift-Left Static Analysis"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: GitLeaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkov Kubernetes & Helm Policy Check
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: kubernetes,helm
+          output_format: cli
+          soft_fail: false
+
+  build-scan-and-sign:
+    name: "Build, Trivy Scan, SBOM & Cosign Signing"
+    runs-on: ubuntu-latest
+    needs: [sast-and-secrets]
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install Sigstore Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Install Syft (SBOM Generator)
+        uses: anchore/sbom-action/download-syft@v0.16.0
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push OCI Container
+        id: build-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+      - name: Run Trivy Vulnerability Scan on Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Generate SPDX & CycloneDX SBOM
+        run: |
+          syft ghcr.io/${{ github.repository }}:${{ github.sha }} -o spdx-json=sbom-spdx.json
+          syft ghcr.io/${{ github.repository }}:${{ github.sha }} -o cyclonedx-json=sbom-cyclonedx.json
+
+      - name: Sign Container Image with Cosign (Keyless OIDC)
+        run: |
+          cosign sign --yes ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+      - name: Attest SBOM to Container Image
+        run: |
+          cosign attest --yes --predicate sbom-spdx.json --type spdxjson ghcr.io/${{ github.repository }}:${{ github.sha }}

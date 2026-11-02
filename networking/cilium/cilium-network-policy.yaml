@@ -1,0 +1,43 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "zero-trust-l7-microsegmentation"
+  namespace: "default"
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: "secure-microservice"
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: "ingress-nginx"
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/healthz"
+              - method: "POST"
+                path: "/api/v1/.*"
+  egress:
+    # Allow DNS only
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: "kube-system"
+            k8s-app: "kube-dns"
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    # Allow HTTPS to internal secure database tier only
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: "secure-database-tier"
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
