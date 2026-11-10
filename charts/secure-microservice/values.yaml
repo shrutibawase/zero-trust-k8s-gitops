@@ -74,3 +74,28 @@ config:
 secrets:
   apiKey: "mock-zero-trust-token-secret"
   databasePassword: "P@ssw0rdSecureProd123!"
+
+quota:
+  enabled: true
+  requests:
+    cpu: "4"
+    memory: "8Gi"
+  limits:
+    cpu: "8"
+    memory: "16Gi"
+  pods: "20"
+
+limitRange:
+  enabled: true
+  default:
+    cpu: "500m"
+    memory: "512Mi"
+  defaultRequest:
+    cpu: "100m"
+    memory: "128Mi"
+  max:
+    cpu: "2"
+    memory: "2Gi"
+  min:
+    cpu: "50m"
+    memory: "64Mi"

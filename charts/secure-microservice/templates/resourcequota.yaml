@@ -1,0 +1,15 @@
+{{- if .Values.quota.enabled -}}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ include "secure-microservice.fullname" . }}-quota
+  labels:
+    {{- include "secure-microservice.labels" . | nindent 4 }}
+spec:
+  hard:
+    requests.cpu: {{ .Values.quota.requests.cpu | default "4" | quote }}
+    requests.memory: {{ .Values.quota.requests.memory | default "8Gi" | quote }}
+    limits.cpu: {{ .Values.quota.limits.cpu | default "8" | quote }}
+    limits.memory: {{ .Values.quota.limits.memory | default "16Gi" | quote }}
+    pods: {{ .Values.quota.pods | default "20" | quote }}
+{{- end }}
