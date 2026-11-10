@@ -1,0 +1,26 @@
+# Helm packaging
+*.tgz
+.helm/
+
+# Kubernetes & Local Development
+kubeconfig
+*.kubeconfig
+*.local.yaml
+
+# OS & Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Keys & Secrets
+*.pem
+*.key
+*.pub
+cosign.key
+cosign.pub
+.env
+.env.*
+!.env.example
