@@ -66,3 +66,11 @@ autoscaling:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 75
   targetMemoryUtilizationPercentage: 80
+
+config:
+  environment: "production"
+  logLevel: "INFO"
+
+secrets:
+  apiKey: "mock-zero-trust-token-secret"
+  databasePassword: "P@ssw0rdSecureProd123!"

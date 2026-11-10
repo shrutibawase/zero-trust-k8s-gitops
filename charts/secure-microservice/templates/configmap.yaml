@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "secure-microservice.fullname" . }}-config
+  labels:
+    {{- include "secure-microservice.labels" . | nindent 4 }}
+data:
+  APP_NAME: {{ include "secure-microservice.name" . | quote }}
+  ENVIRONMENT: {{ .Values.config.environment | default "production" | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | default "INFO" | quote }}
+  PORT: "8080"
+  METRICS_ENABLED: "true"
+  ZERO_TRUST_MODE: "enforce"

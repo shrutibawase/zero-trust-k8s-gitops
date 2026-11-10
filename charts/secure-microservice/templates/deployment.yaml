@@ -28,6 +28,11 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "secure-microservice.fullname" . }}-config
+            - secretRef:
+                name: {{ include "secure-microservice.fullname" . }}-secrets
           livenessProbe:
             httpGet:
               path: /healthz
