@@ -110,3 +110,26 @@ kubectl apply -f networking/cilium/cilium-network-policy.yaml
 ```bash
 kubectl apply -f gitops/root-app.yaml
 ```
+
+
+---
+
+## 📦 Zero-Trust Microservice Helm Architecture
+
+The chart located in `charts/secure-microservice` delivers production Kubernetes workloads adhering strictly to the **Pod Security Standard (PSS) Restricted** profile:
+
+- **Strict Security Context**: `runAsNonRoot: true` (UID `10001`), `readOnlyRootFilesystem: true`, and `capabilities.drop: [ALL]`.
+- **Token Protection**: Pod `ServiceAccount` enforces `automountServiceAccountToken: false` to eliminate token theft vectors.
+- **Horizontal Pod Autoscaling (HPA)**: Scaled dynamically on CPU (75%) and Memory (80%) thresholds with stabilization windows.
+- **TLS Ingress**: Automated certificate issuance using `cert-manager.io/cluster-issuer: letsencrypt-prod`.
+- **Resource Governance**: Hard namespace quotas (`ResourceQuota`) and container thresholds (`LimitRange`) preventing noisy neighbors.
+- **Decoupled Secrets & Config**: Dynamic injection via ConfigMap and Secret references.
+
+### Run Automated Chart Lint & Invariant Tests
+```bash
+# Bash
+./scripts/test-charts.sh
+
+# PowerShell
+.\scripts\test-charts.ps1
+```
