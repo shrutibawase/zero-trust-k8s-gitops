@@ -1,0 +1,44 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-ro-rootfs-and-non-root
+  annotations:
+    policies.kyverno.io/title: Require Read-Only Root Filesystem and Non-Root UID
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      An immutable root filesystem prevents attackers from modifying system binaries or downloading malware.
+      Containers must run with read-only root filesystems and non-root user IDs.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-readonly-root-filesystem
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Zero-Trust Policy Violation: readOnlyRootFilesystem must be set to true."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
+
+    - name: check-non-root-uid
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Zero-Trust Policy Violation: runAsUser must be greater than 0 (root UID 0 is strictly forbidden)."
+        pattern:
+          spec:
+            =(securityContext):
+              =(runAsUser): ">0"
+            containers:
+              - =(securityContext):
+                  =(runAsUser): ">0"
