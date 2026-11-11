@@ -1,0 +1,45 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: enforce-pod-security-restricted
+  annotations:
+    policies.kyverno.io/title: Enforce Pod Security Standards (Restricted)
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/description: >-
+      Enforces the Kubernetes Pod Security Standard 'Restricted' profile, blocking
+      host network, host PID, host IPC namespaces, and enforcing RuntimeDefault seccomp profiles.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: disallow-host-namespaces
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: >-
+          Zero-Trust Policy Violation: Sharing host namespaces (hostNetwork, hostPID, hostIPC)
+          is forbidden in the restricted security profile.
+        pattern:
+          spec:
+            =(hostNetwork): false
+            =(hostPID): false
+            =(hostIPC): false
+
+    - name: require-seccomp-default
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: >-
+          Zero-Trust Policy Violation: Pods must configure a seccompProfile of type 'RuntimeDefault' or 'Localhost'.
+        pattern:
+          spec:
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault | Localhost
