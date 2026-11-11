@@ -1,0 +1,47 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-default-security-context
+  annotations:
+    policies.kyverno.io/title: Mutate Default Pod Security Context
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Automatically injects baseline zero-trust security postures (non-root, seccomp RuntimeDefault,
+      dropping all capabilities) if omitted by developers, accelerating secure-by-default adoption.
+spec:
+  rules:
+    - name: inject-pod-seccomp-profile
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            annotations:
+              +(security.enterprise.io/mutated-by): "kyverno-secure-defaults"
+          spec:
+            securityContext:
+              +(seccompProfile):
+                type: RuntimeDefault
+
+    - name: inject-container-security-context
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (name): "?*"
+                securityContext:
+                  +(runAsNonRoot): true
+                  +(allowPrivilegeEscalation): false
+                  +(readOnlyRootFilesystem): true
+                  +(capabilities):
+                    drop:
+                      - ALL
