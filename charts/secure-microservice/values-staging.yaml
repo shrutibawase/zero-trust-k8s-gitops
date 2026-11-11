@@ -1,0 +1,47 @@
+# Environment Overrides: Staging
+replicaCount: 2
+
+config:
+  environment: "staging"
+  logLevel: "INFO"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: staging.api.internal.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: staging-api-tls-cert
+      hosts:
+        - staging.api.internal.local
+
+quota:
+  enabled: true
+  requests:
+    cpu: "4"
+    memory: "8Gi"
+  limits:
+    cpu: "8"
+    memory: "16Gi"
+  pods: "10"

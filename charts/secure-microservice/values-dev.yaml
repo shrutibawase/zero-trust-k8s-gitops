@@ -1,0 +1,33 @@
+# Environment Overrides: Development
+replicaCount: 1
+
+config:
+  environment: "development"
+  logLevel: "DEBUG"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: dev.api.internal.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+quota:
+  enabled: false
+
+limitRange:
+  enabled: false
