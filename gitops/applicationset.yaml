@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-env-microservices
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    gitops.enterprise.io/generator: applicationset
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: zero-trust-dev
+            valueFile: values-dev.yaml
+            targetRevision: HEAD
+            autoSync: true
+          - env: staging
+            namespace: zero-trust-staging
+            valueFile: values-staging.yaml
+            targetRevision: HEAD
+            autoSync: true
+          - env: prod
+            namespace: zero-trust-prod
+            valueFile: values-prod.yaml
+            targetRevision: HEAD
+            autoSync: false # Manual promotion gate for production
+  template:
+    metadata:
+      name: '{{env}}-secure-microservice'
+      labels:
+        environment: '{{env}}'
+        app.kubernetes.io/part-of: zero-trust-k8s-gitops
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/shrutibawase/zero-trust-k8s-gitops.git'
+        targetRevision: '{{targetRevision}}'
+        path: charts/secure-microservice
+        helm:
+          valueFiles:
+            - '{{valueFile}}'
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 1m
