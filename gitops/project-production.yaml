@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: zero-trust-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    gitops.enterprise.io/tier: governance
+spec:
+  description: "Production Zero-Trust Project with strict sync windows and change freeze controls"
+
+  # Whitelist authorized Git source repositories
+  sourceRepos:
+    - 'https://github.com/shrutibawase/zero-trust-k8s-gitops.git'
+
+  # Whitelist target destination clusters and namespaces
+  destinations:
+    - namespace: 'zero-trust-prod'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'argocd'
+      server: 'https://kubernetes.default.svc'
+
+  # Disallow dangerous cluster-scoped actions
+  clusterResourceBlacklist:
+    - group: ''
+      kind: Node
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRoleBinding
+
+  # Strict Sync Windows (Change Freeze Controls)
+  syncWindows:
+    # 1. Block all production syncs during weekend change freeze (Friday 6 PM to Monday 6 AM)
+    - kind: deny
+      schedule: '0 18 * * 5'
+      duration: 60h
+      applications:
+        - '*prod*'
+      manualSync: false
+
+    # 2. Allow regular business release window (Mon-Thu 10 AM to 3 PM)
+    - kind: allow
+      schedule: '0 10 * * 1-4'
+      duration: 5h
+      applications:
+        - '*prod*'
+      manualSync: true
