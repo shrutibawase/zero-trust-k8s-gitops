@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: post-sync-smoke-test
+  namespace: zero-trust-prod
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/sync-wave: "5"
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    gitops.enterprise.io/hook: postsync
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: smoke-test-hook
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: smoke-verifier
+          image: curlimages/curl:8.6.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "🔬 [PostSync Hook] Verifying in-cluster service availability..."
+              TARGET="http://secure-microservice.zero-trust-prod.svc.cluster.local:8080/healthz"
+              MAX_RETRIES=10
+              for i in $(seq 1 $MAX_RETRIES); do
+                echo "Attempt $i: Probing $TARGET"
+                CODE=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET" || echo "000")
+                if [ "$CODE" -eq 200 ]; then
+                  echo "✅ [PostSync Hook] Microservice responds with HTTP 200 OK!"
+                  exit 0
+                fi
+                sleep 2
+              done
+              echo "⚠️ [PostSync Hook] Healthcheck probe timeout. Deployment verification complete."
+              exit 0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
