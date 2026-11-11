@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-and-untrusted-registries
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag and Untrusted Container Registries
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Deploying containers with the ':latest' tag introduces unpredictable drift and non-reproducible deployments.
+      Images must use explicit semantic version tags or sha256 digests, and originate from whitelisted registries.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: validate-image-tag-not-latest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Zero-Trust Policy Violation: Using ':latest' tag is forbidden. Use a specific version tag or digest."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+
+    - name: whitelist-trusted-registries
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Zero-Trust Policy Violation: Container image must originate from an authorized enterprise registry."
+        pattern:
+          spec:
+            containers:
+              - image: "ghcr.io/shrutibawase/* | mcr.microsoft.com/* | registry.k8s.io/* | docker.io/* | quay.io/*"
