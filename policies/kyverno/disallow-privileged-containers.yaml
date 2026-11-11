@@ -1,0 +1,58 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged-and-capabilities
+  annotations:
+    policies.kyverno.io/title: Disallow Privileged Containers and Dangerous Capabilities
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/description: >-
+      Privileged containers and unconfined Linux capabilities can lead to container breakout.
+      Containers must run unprivileged, block privilege escalation, and drop ALL capabilities.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: disallow-privileged-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Zero-Trust Policy Violation: Privileged containers are strictly forbidden."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  =(privileged): false
+
+    - name: disallow-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Zero-Trust Policy Violation: allowPrivilegeEscalation must be set to false."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+
+    - name: require-drop-all-capabilities
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Zero-Trust Policy Violation: Containers must drop ALL Linux capabilities (capabilities.drop: [ALL])."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  capabilities:
+                    drop:
+                      - ALL
