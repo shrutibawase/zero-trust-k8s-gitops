@@ -1,0 +1,35 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: ebpf-mutual-tls-encryption
+  namespace: zero-trust-prod
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    networking.enterprise.io/tier: encryption-in-transit
+spec:
+  description: >-
+    Enforces sidecar-free mutual TLS (mTLS) pod-to-pod authentication and wire encryption
+    directly in the Linux kernel via eBPF.
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: secure-microservice
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: ingress-nginx
+      authentication:
+        mode: "required"
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: secure-database-tier
+      authentication:
+        mode: "required"
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
