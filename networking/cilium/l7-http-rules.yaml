@@ -1,0 +1,46 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: l7-http-method-authorization
+  namespace: zero-trust-prod
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    networking.enterprise.io/tier: application-firewall
+spec:
+  description: >-
+    Layer-7 application-aware microsegmentation inspecting HTTP methods and URI paths.
+    Enforces least privilege at the application protocol layer using eBPF parsing.
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: secure-microservice
+  ingress:
+    # 1. Healthcheck endpoints open to kubelet and internal cluster probes
+    - toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "^/healthz$"
+              - method: "GET"
+                path: "^/readyz$"
+
+    # 2. Public API endpoints restricted exclusively to traffic arriving from Nginx Ingress
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: ingress-nginx
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "^/api/v1/resources.*"
+              - method: "POST"
+                path: "^/api/v1/resources.*"
+              - method: "PUT"
+                path: "^/api/v1/resources/.*"
+              - method: "DELETE"
+                path: "^/api/v1/resources/.*"
