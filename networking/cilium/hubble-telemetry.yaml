@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hubble-telemetry-config
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    networking.enterprise.io/telemetry: hubble-ebpf
+data:
+  # Enable Hubble metrics for Zero-Trust packet inspection
+  hubble-metrics-server: ":9965"
+  hubble-metrics: >-
+    drop
+    tcp
+    httpV2:exemplars=true;labelsContext=source_namespace,source_workload,destination_namespace,destination_workload,traffic_direction
+    dns:query;ignoreAAAA
+    flow
+    port-distribution
+    icmp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubble-metrics
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: hubble-metrics
+    app.kubernetes.io/part-of: cilium
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9965"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    k8s-app: cilium
+  ports:
+    - name: hubble-metrics
+      port: 9965
+      protocol: TCP
+      targetPort: 9965
