@@ -1,0 +1,16 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: zero-trust-prod
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    networking.enterprise.io/tier: baseline-hardening
+spec:
+  description: >-
+    Enforces a strict default-deny baseline for both ingress and egress traffic.
+    All unapproved network flows are dropped by eBPF programs in the Linux kernel.
+  endpointSelector:
+    matchLabels: {}
+  ingress: []
+  egress: []
