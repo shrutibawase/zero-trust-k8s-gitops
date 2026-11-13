@@ -1,0 +1,41 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: dns-aware-egress-filtering
+  namespace: zero-trust-prod
+  labels:
+    app.kubernetes.io/part-of: zero-trust-k8s-gitops
+    networking.enterprise.io/tier: egress-protection
+spec:
+  description: >-
+    Restricts outbound pod communication strictly to cluster CoreDNS and explicitly whitelisted
+    external FQDNs via L7 DNS proxy inspection, blocking data exfiltration and reverse shells.
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: secure-microservice
+  egress:
+    # 1. Allow CoreDNS querying in kube-system with DNS proxy inspection
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # 2. Allow outbound HTTPS strictly to whitelisted FQDNs
+    - toFQDNs:
+        - matchPattern: "*.github.com"
+        - matchName: "ghcr.io"
+        - matchPattern: "*.pkg-containers.githubusercontent.com"
+        - matchPattern: "*.azure.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
