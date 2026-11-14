@@ -1,0 +1,16 @@
+name: supply-chain-signature-verification-tests
+policies:
+  - ../kyverno/require-cosign-image-signature.yaml
+resources:
+  - supply-chain-resources.yaml
+results:
+  - policy: check-image-cosign-signature
+    rule: verify-signature
+    resource: secure-service-signed
+    kind: Pod
+    result: pass
+  - policy: check-image-cosign-signature
+    rule: verify-signature
+    resource: untrusted-service-unsigned
+    kind: Pod
+    result: skip

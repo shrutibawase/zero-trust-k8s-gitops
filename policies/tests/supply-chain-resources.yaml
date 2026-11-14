@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-service-signed
+  namespace: default
+spec:
+  containers:
+    - name: secure-microservice
+      image: ghcr.io/shrutibawase/zero-trust-k8s-gitops:latest
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: untrusted-service-unsigned
+  namespace: default
+spec:
+  containers:
+    - name: rogue-microservice
+      image: docker.io/malicious-actor/backdoored-app:v1.0.0
