@@ -108,6 +108,31 @@ jobs:
             sbom-cyclonedx.json
           retention-days: 90
 
+      - name: Run Trivy Vulnerability Scanner on Container Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "ghcr.io/${{ github.repository }}@${{ steps.build-push.outputs.digest }}"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+
+      - name: Upload Trivy Security Findings to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy-container"
+
+      - name: Run Grype Scanner against SPDX SBOM
+        uses: anchore/scan-action@v3
+        with:
+          sbom: "sbom-spdx.json"
+          config: ".grype.yaml"
+          fail-build: true
+          severity-cutoff: "high"
+          output-format: "sarif"
+
       - name: Sign Container Image (Sigstore Keyless OIDC)
         env:
           IMAGE_URI: ghcr.io/${{ github.repository }}@${{ steps.build-push.outputs.digest }}

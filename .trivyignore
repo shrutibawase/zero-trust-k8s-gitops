@@ -1,0 +1,6 @@
+# Trivy Ignore File - Zero-Trust K8s Vulnerability Exceptions
+# Documentation: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/#trivyignore
+# Format: <Vulnerability ID> # <Expiration Date (YYYY-MM-DD)> - <Approved Ticket> - <Justification>
+
+# No global ignores currently authorized.
+# Zero-trust baseline requires all CRITICAL and HIGH vulnerabilities to be remediated.

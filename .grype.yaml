@@ -1,0 +1,25 @@
+# Grype Vulnerability Scanner Configuration
+# Specification: https://github.com/anchore/grype
+
+# Fail execution when vulnerabilities at or above this severity are detected
+# Options: negligible, low, medium, high, critical
+fail-on-severity: "high"
+
+# Output format options: table, json, cyclonedx, sarif, template
+output: "table"
+
+# Check for Grype application updates
+check-for-app-update: false
+
+# Vulnerability database configuration
+db:
+  auto-update: true
+  cache-dir: "~/.grype/db"
+  max-allowed-built-age: "120h" # 5 days max cache age
+
+# CVE Suppression / Ignore List
+# Only suppress CVEs with approved security exception tickets and fix roadmaps
+ignore:
+  # Example: Non-exploitable glibc artifact in non-network daemon context
+  # - vulnerability: CVE-2023-4911
+  #   reason: "Patched upstream, awaiting base alpine release roll"
