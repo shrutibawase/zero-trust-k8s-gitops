@@ -140,3 +140,30 @@ jobs:
         run: |
           echo "Signing image digest: $IMAGE_URI"
           cosign sign --yes "$IMAGE_URI"
+
+      - name: Attest SPDX SBOM to Container Image
+        env:
+          IMAGE_URI: ghcr.io/${{ github.repository }}@${{ steps.build-push.outputs.digest }}
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          echo "Attesting SPDX SBOM to image: $IMAGE_URI"
+          cosign attest --yes \
+            --predicate sbom-spdx.json \
+            --type spdxjson \
+            "$IMAGE_URI"
+
+      - name: Generate and Attest SLSA Level 3 Provenance
+        env:
+          IMAGE_URI: ghcr.io/${{ github.repository }}@${{ steps.build-push.outputs.digest }}
+          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          echo "Generating SLSA Provenance Predicate..."
+          chmod +x ./scripts/generate-slsa-predicate.sh
+          ./scripts/generate-slsa-predicate.sh "$IMAGE_DIGEST" provenance-predicate.json
+          
+          echo "Attesting SLSA Level 3 Provenance to image: $IMAGE_URI"
+          cosign attest --yes \
+            --predicate provenance-predicate.json \
+            --type https://slsa.dev/provenance/v0.2 \
+            "$IMAGE_URI"

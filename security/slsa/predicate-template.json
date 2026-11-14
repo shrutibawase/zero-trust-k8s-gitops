@@ -1,0 +1,54 @@
+{
+  "_type": "https://in-toto.io/Statement/v0.1",
+  "predicateType": "https://slsa.dev/provenance/v0.2",
+  "subject": [
+    {
+      "name": "ghcr.io/shrutibawase/zero-trust-k8s-gitops",
+      "digest": {
+        "sha256": "IMAGE_DIGEST_PLACEHOLDER"
+      }
+    }
+  ],
+  "predicate": {
+    "builder": {
+      "id": "https://github.com/shrutibawase/zero-trust-k8s-gitops/.github/workflows/supply-chain-security.yml@refs/heads/main"
+    },
+    "buildType": "https://github.com/slsa-framework/slsa-github-generator/container@v1",
+    "invocation": {
+      "configSource": {
+        "uri": "git+https://github.com/shrutibawase/zero-trust-k8s-gitops",
+        "digest": {
+          "sha1": "GIT_COMMIT_SHA_PLACEHOLDER"
+        },
+        "entryPoint": ".github/workflows/supply-chain-security.yml"
+      },
+      "parameters": {
+        "event_name": "push",
+        "ref": "refs/heads/main"
+      },
+      "environment": {
+        "github_run_id": "RUN_ID_PLACEHOLDER",
+        "github_run_attempt": "1",
+        "runner_os": "Linux"
+      }
+    },
+    "metadata": {
+      "buildStartedOn": "BUILD_START_TIME_PLACEHOLDER",
+      "buildFinishedOn": "BUILD_FINISH_TIME_PLACEHOLDER",
+      "completeness": {
+        "parameters": true,
+        "environment": true,
+        "materials": true
+      },
+      "reproducible": false
+    },
+    "materials": [
+      {
+        "uri": "git+https://github.com/shrutibawase/zero-trust-k8s-gitops",
+        "digest": {
+          "sha1": "GIT_COMMIT_SHA_PLACEHOLDER"
+        }
+      }
+    ]
+  }
+}
