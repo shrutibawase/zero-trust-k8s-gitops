@@ -1,0 +1,56 @@
+# Syft Configuration File - Zero-Trust K8s GitOps SBOM Generation
+# Specification: https://github.com/anchore/syft
+
+# Cataloging scope (squashed layers or all layers)
+scope: "squashed"
+
+# File exclusion rules to omit build-time artifacts and temporary files
+exclude:
+  - "**/tmp/**"
+  - "**/var/cache/**"
+  - "**/.git/**"
+  - "**/__pycache__/**"
+  - "**/*.pyc"
+  - "**/node_modules/.cache/**"
+
+# Package cataloger configurations
+package:
+  # Search within archives (e.g. jar, tar)
+  search-unindexed-archives: true
+  search-indexed-archives: true
+
+# Linux distribution catalogers
+linux-release:
+  catalogers:
+    - "alpine"
+    - "debian"
+    - "redhat"
+
+# Language ecosystem catalogers
+golang:
+  search-local-mod-cache-licenses: true
+  proxies: []
+
+python:
+  guess-unmanaged-python-packages: true
+
+javascript:
+  search-remote-licenses: false
+
+# File metadata cataloging for integrity checks
+file-metadata:
+  cataloger:
+    enabled: true
+  digests:
+    - "sha256"
+    - "sha1"
+
+# License detection
+file-classification:
+  cataloger:
+    enabled: true
+
+# Output default format if unspecified
+output:
+  - "spdx-json"
+  - "cyclonedx-json"
