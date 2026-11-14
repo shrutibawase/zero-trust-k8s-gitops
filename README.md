@@ -133,3 +133,37 @@ The chart located in `charts/secure-microservice` delivers production Kubernetes
 # PowerShell
 .\scripts\test-charts.ps1
 ```
+
+
+---
+
+## 🛡️ SLSA Level 3 Supply Chain Security
+
+The repository implements a hardened continuous delivery pipeline with cryptographic traceability:
+
+- **Keyless Container Signing**: Signs images with ephemeral X.509 certs issued by Sigstore Fulcio and logged to Rekor.
+- **Dual SBOM Standards**: Generates both SPDX 2.3 and CycloneDX 1.5 formats via Anchore Syft.
+- **Vulnerability Gates**: Dual-engine scanning with Aqua Trivy and Anchore Grype failing on `CRITICAL` or `HIGH` vulnerabilities.
+- **SLSA Provenance Attestation**: Attests build invocation, parameters, and Git commit SHA via in-toto predicates.
+- **Admission Enforcement**: Kyverno `ClusterPolicy` intercepts pod admissions and verifies Cosign signatures before runtime.
+
+### Detailed Architecture & Documentation
+
+- [SLSA Level 3 Security Guide & Runbook](file:///D:/project/antigravity/zero-trust-k8s-gitops/docs/slsa-level-3-guide.md)
+- [Cilium eBPF Networking Guide](file:///D:/project/antigravity/zero-trust-k8s-gitops/docs/cilium-ebpf-networking-guide.md)
+- [Policy-as-Code Governance Guide](file:///D:/project/antigravity/zero-trust-k8s-gitops/docs/policy-as-code-guide.md)
+- [ArgoCD GitOps Architecture Guide](file:///D:/project/antigravity/zero-trust-k8s-gitops/docs/gitops-argocd-guide.md)
+
+### Verification Commands
+
+```bash
+# Verify image signature, SBOM attestation & SLSA provenance (Bash)
+./scripts/verify-image.sh ghcr.io/shrutibawase/zero-trust-k8s-gitops:latest
+
+# Verify image signature, SBOM attestation & SLSA provenance (PowerShell)
+.\scripts\verify-image.ps1 ghcr.io/shrutibawase/zero-trust-k8s-gitops:latest
+
+# Run automated supply chain test suite
+./scripts/test-supply-chain.sh
+.\scripts\test-supply-chain.ps1
+```
