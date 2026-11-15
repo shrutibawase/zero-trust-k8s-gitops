@@ -1,0 +1,65 @@
+name: "Policy-as-Code & Manifest Security Validation"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'policies/**'
+      - 'gitops/**'
+      - 'networking/**'
+      - '.github/workflows/policy-and-manifest-validation.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'policies/**'
+      - 'gitops/**'
+      - 'networking/**'
+      - '.github/workflows/policy-and-manifest-validation.yml'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  kyverno-cli-tests:
+    name: "Kyverno Policy Unit & Invariant Tests"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Kyverno CLI
+        uses: kyverno/action-install-cli@v0.2.0
+
+      - name: Validate Kyverno ClusterPolicies
+        run: |
+          echo "=== Validating Kyverno Policies Syntax ==="
+          kyverno validate policies/kyverno/
+
+      - name: Run Kyverno Unit Tests
+        run: |
+          echo "=== Executing Kyverno Policy Test Suite ==="
+          kyverno test policies/tests/
+
+  checkov-static-analysis:
+    name: "Checkov Static Manifest & GitOps Security Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov Security Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: "policies/ gitops/ networking/"
+          framework: kubernetes
+          output_format: cli,sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: false
+
+      - name: Upload Checkov Findings to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "checkov-results.sarif"
+          category: "checkov-manifests"
