@@ -1,0 +1,77 @@
+name: "Helm Linting & Kubeconform Validation"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'charts/**'
+      - '.github/workflows/helm-lint-and-validate.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'charts/**'
+      - '.github/workflows/helm-lint-and-validate.yml'
+
+jobs:
+  helm-lint:
+    name: "Helm Lint & Chart Testing"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.3
+
+      - name: Lint Chart Baseline
+        run: |
+          echo "=== Linting charts/secure-microservice ==="
+          helm lint charts/secure-microservice --strict
+
+      - name: Lint with Environment Values
+        run: |
+          for env in dev staging prod; do
+            echo "=== Linting with values-${env}.yaml ==="
+            helm lint charts/secure-microservice -f charts/secure-microservice/values-${env}.yaml --strict
+          done
+
+  kubeconform-validation:
+    name: "Kubeconform Schema Validation (v${{ matrix.k8s-version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        k8s-version: ["1.28.0", "1.29.0", "1.30.0"]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.3
+
+      - name: Download Kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Validate Rendered Templates against K8s Schemas
+        run: |
+          for env in dev staging prod; do
+            echo "--- Testing environment: ${env} on K8s ${{ matrix.k8s-version }} ---"
+            helm template secure-microservice charts/secure-microservice \
+              -f charts/secure-microservice/values-${env}.yaml \
+              --namespace production > rendered-${env}.yaml
+            
+            kubeconform \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              -kubernetes-version ${{ matrix.k8s-version }} \
+              -strict \
+              -summary \
+              rendered-${env}.yaml
+          done
