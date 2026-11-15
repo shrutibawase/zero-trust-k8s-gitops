@@ -1,0 +1,50 @@
+# Kind Cluster Configuration - Zero-Trust Cilium & eBPF Architecture
+# Specification: https://kind.sigs.k8s.io/docs/user/configuration/
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: zero-trust-cluster
+
+# Disable default CNI & kube-proxy for Cilium eBPF host-routing replacement
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: "none"
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+
+nodes:
+  # Control Plane Node with Ingress port mapping
+  - role: control-plane
+    image: kindest/node:v1.29.2@sha256:51a1434a53bb1f747527dc8644d15e19dd5a3621254b4900d93089f5de527925
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+      - containerPort: 9965
+        hostPort: 9965
+        protocol: TCP # Hubble UI / Relay metrics
+    extraMounts:
+      - hostPath: /sys/fs/bpf
+        mountPath: /sys/fs/bpf
+
+  # Worker Node 01
+  - role: worker
+    image: kindest/node:v1.29.2@sha256:51a1434a53bb1f747527dc8644d15e19dd5a3621254b4900d93089f5de527925
+    extraMounts:
+      - hostPath: /sys/fs/bpf
+        mountPath: /sys/fs/bpf
+
+  # Worker Node 02
+  - role: worker
+    image: kindest/node:v1.29.2@sha256:51a1434a53bb1f747527dc8644d15e19dd5a3621254b4900d93089f5de527925
+    extraMounts:
+      - hostPath: /sys/fs/bpf
+        mountPath: /sys/fs/bpf
