@@ -167,3 +167,15 @@ The repository implements a hardened continuous delivery pipeline with cryptogra
 ./scripts/test-supply-chain.sh
 .\scripts\test-supply-chain.ps1
 ```
+
+
+---
+
+## ⚡ Cluster Bootstrap & CI/CD Automation
+
+The repository includes complete automation for local cluster provisioning and end-to-end policy testing:
+
+- **Local Kind Cluster with eBPF**: Multi-node topology with Cilium kube-proxy replacement (`cluster/kind-config.yaml`).
+- **One-Command Bootstrap**: Shell and PowerShell automation scripts deploying Cilium, Kyverno, and ArgoCD (`scripts/setup-kind-cluster.sh` / `.ps1`).
+- **E2E Security Smoke Suite**: Automated tests asserting that privileged containers and root users are blocked at admission (`scripts/e2e-smoke-test.sh` / `.ps1`).
+- **Comprehensive Guide**: [Cluster Bootstrap & CI/CD Testing Guide](file:///D:/project/antigravity/zero-trust-k8s-gitops/docs/cluster-bootstrap-and-testing-guide.md).
