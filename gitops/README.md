@@ -22,3 +22,15 @@ This directory contains the declarative GitOps definitions, App-of-Apps root man
 kubectl apply -f root-app.yaml
 ```
 ArgoCD will automatically discover all child applications and begin reconciling the target cluster to the desired Git state.
+
+- `argocd-notifications-cm.yaml`: Real-time notification templates and triggers for Slack, Teams, and Webhooks.
+
+---
+
+## 🔔 Real-Time Notifications & Alerting
+
+The `argocd-notifications-cm.yaml` manifest defines automated event triggers:
+
+- **`on-sync-failed`:** Emitted when sync operations fail due to manifest errors or admission webhook rejections (e.g., Kyverno blocking an unsigned image).
+- **`on-health-degraded`:** Emitted when workloads enter `CrashLoopBackOff`, fail liveness probes, or are partitioned by Cilium network policies.
+- **`on-deployed`:** Emitted upon successful verification and rollout of new Git revisions.

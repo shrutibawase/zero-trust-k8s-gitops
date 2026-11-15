@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-notifications-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Trigger: Application Synchronization Failed
+  trigger.on-sync-failed: |
+    - description: Application sync failed
+      send: [app-sync-failed]
+      when: app.status.operationState.phase in ['Error', 'Failed']
+
+  # Trigger: Application Health Degraded
+  trigger.on-health-degraded: |
+    - description: Application health state degraded
+      send: [app-health-degraded]
+      when: app.status.health.status == 'Degraded'
+
+  # Trigger: Successful Production Deployment
+  trigger.on-deployed: |
+    - description: Application successfully synced and healthy
+      send: [app-deployed]
+      when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
+
+  # Template: Sync Failed Notification
+  template.app-sync-failed: |
+    message: |
+      🚨 *ArgoCD Sync Failure Alert*
+      *Application:* {{.app.metadata.name}}
+      *Namespace:* {{.app.spec.destination.namespace}}
+      *Cluster:* {{.app.spec.destination.server}}
+      *Revision:* {{.app.status.sync.revision}}
+      *Error Details:*
+      ```
+      {{.app.status.operationState.message}}
+      ```
+      *Action:* Check ArgoCD dashboard or Kyverno admission audit logs immediately.
+
+  # Template: Health Degraded Notification
+  template.app-health-degraded: |
+    message: |
+      ⚠️ *ArgoCD Health Degraded Alert*
+      *Application:* {{.app.metadata.name}}
+      *Health Status:* Degraded
+      *Message:* Pods or resources are failing readiness/liveness checks or blocked by network policies.
+
+  # Template: Deployment Succeeded Notification
+  template.app-deployed: |
+    message: |
+      ✅ *ArgoCD Deployment Succeeded*
+      *Application:* {{.app.metadata.name}}
+      *Environment:* {{.app.spec.destination.namespace}}
+      *Commit:* {{.app.status.sync.revision}}
+      *Status:* Healthy & Synced
