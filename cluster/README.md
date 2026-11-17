@@ -34,3 +34,26 @@ This directory defines the **declarative topology** for bootstrapping a local pr
 1. **`disableDefaultCNI: true`:** Kind does not install `kindnet`, permitting Cilium to manage the entire pod networking lifecycle.
 2. **`kubeProxyMode: "none"`:** Disables standard iptables-based `kube-proxy`. Cilium replaces `kube-proxy` via eBPF socket load balancing, delivering superior performance, lower latency, and deep observability.
 3. **eBPF Host Routing:** Kernel bypass via BPF programs attached to network device queues (tc/xdp).
+
+
+---
+
+## 3. Cluster Lifecycle Commands
+
+### Setup Cluster (with Cilium eBPF, Kyverno & ArgoCD)
+```bash
+# Linux / macOS
+./scripts/setup-kind-cluster.sh
+
+# Windows PowerShell
+.\scripts\setup-kind-cluster.ps1
+```
+
+### Teardown & Clean Up
+```bash
+# Linux / macOS
+./scripts/teardown-kind-cluster.sh
+
+# Windows PowerShell
+.\scripts\teardown-kind-cluster.ps1
+```
